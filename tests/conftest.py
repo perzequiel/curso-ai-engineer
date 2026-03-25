@@ -3,11 +3,6 @@
 import pytest
 
 from src.domain.entities.review import Review
-from src.domain.value_objects.rating import Rating
-from src.domain.value_objects.review_status import ReviewStatus
-from src.infrastructure.persistence.in_memory_repository import InMemoryReviewRepository
-from src.infrastructure.ai.ai_code_reviewer import MockCodeReviewer
-from src.infrastructure.github.github_adapter import MockGitHubAdapter
 
 
 @pytest.fixture
@@ -36,19 +31,3 @@ def failed_review() -> Review:
     return review
 
 
-@pytest.fixture
-def in_memory_repository() -> InMemoryReviewRepository:
-    """Crea un repositorio en memoria limpio."""
-    return InMemoryReviewRepository()
-
-
-@pytest.fixture
-def mock_code_reviewer() -> MockCodeReviewer:
-    """Crea un code reviewer mock."""
-    return MockCodeReviewer()
-
-
-@pytest.fixture
-def mock_github_client() -> MockGitHubAdapter:
-    """Crea un cliente GitHub mock."""
-    return MockGitHubAdapter()
