@@ -8,7 +8,7 @@ from datetime import datetime
 
 import pytest
 
-from src.domain.entities.review import Review
+from src.domain.entities.review import Review, ReviewStatus
 
 
 class TestReviewCreation:
@@ -17,7 +17,7 @@ class TestReviewCreation:
     def test_create_review_with_defaults(self):
         review = Review(pr_id="123")
         assert review.pr_id == "123"
-        assert review.status == 'pending'
+        assert review.status == ReviewStatus.PENDING
         assert review.rating is None
         assert review.summary == ""
         assert review.recommendations == []
@@ -67,7 +67,7 @@ class TestReviewStateTransitions:
     def test_start_processing(self):
         review = Review(pr_id="123")
         review.start_processing()
-        assert review.status == 'in_progress'
+        assert review.status == ReviewStatus.IN_PROGRESS
 
     def test_complete_review(self):
         review = Review(pr_id="123")
@@ -77,7 +77,7 @@ class TestReviewStateTransitions:
             summary="Excellent code",
             recommendations=["Minor: add docstrings"],
         )
-        assert review.status == 'completed'
+        assert review.status == ReviewStatus.COMPLETED
         assert review.rating == rating
         assert review.summary == "Excellent code"
         assert review.recommendations == ["Minor: add docstrings"]
@@ -86,7 +86,7 @@ class TestReviewStateTransitions:
     def test_fail_review(self):
         review = Review(pr_id="123")
         review.fail("API timeout")
-        assert review.status == 'failed'
+        assert review.status == ReviewStatus.FAILED
         assert "API timeout" in review.summary
         assert review.completed_at is not None
 
