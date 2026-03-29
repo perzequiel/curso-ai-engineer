@@ -17,12 +17,12 @@ class TestReviewCreation:
     def test_create_review_with_defaults(self):
         review = Review(pr_id="123")
         assert review.pr_id == "123"
-        # assert review.status == 'pending'
-        # assert review.rating is None
-        # assert review.summary == ""
-        # assert review.recommendations == []
-        # assert review.completed_at is None
-        # assert review.id is not None
+        assert review.status == 'pending'
+        assert review.rating is None
+        assert review.summary == ""
+        assert review.recommendations == []
+        assert review.completed_at is None
+        assert review.id is not None
 
     def test_create_review_with_custom_id(self):
         review = Review(pr_id="123", review_id="custom-id")
