@@ -17,3 +17,21 @@ class Review:
         if self.rating is None:
             return False
         return self.rating > APPROVAL_THRESHOLD
+    
+    def start_processing(self):
+        self.status = 'in_progress'
+
+    def complete(self, rating: int, summary: str, recommendations: list[str]):
+        self.rating = rating
+        self.summary = summary
+        self.recommendations = recommendations
+        self.status = 'completed'
+        self.completed_at = datetime.now(timezone.utc)
+
+    def fail(self, summary: str) -> None:
+        self.summary = summary
+        self.status = 'failed'
+        self.completed_at = datetime.now(timezone.utc)
+
+    def __repr__(self) -> str:
+        return f"Review - PR ID: {self.pr_id!r} - REVIEW_ID: {self.id!r}"
