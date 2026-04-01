@@ -1,9 +1,11 @@
 from datetime import datetime
+from src.domain.value_objects.reviewStatus import ReviewStatus
+from src.domain.value_objects.rating import Rating
 
 class Review:
     def __init__(self, pr_id: str, review_id: str = None):
         self.pr_id = pr_id
-        self.status = 'pending'
+        self.status = ReviewStatus.PENDING
         self.rating = None
         self.summary = ""
         self.recommendations = []
@@ -15,22 +17,20 @@ class Review:
             self.id = review_id
 
     def is_approved(self):
-        if self.rating is None or self.rating <= 70:
-            return False
-        return True
+        return self.rating is not None and Rating.in_range(self.rating)
     
     def start_processing(self):
-        self.status = 'in_progress'
+        self.status = ReviewStatus.IN_PROGRESS
 
     def complete(self, rating: int, summary: str, recommendations: list[str]):
-        self.status = 'completed'
+        self.status = ReviewStatus.COMPLETED
         self.rating = rating
         self.summary = summary
         self.recommendations = recommendations
         self.completed_at = datetime.now()
 
     def fail(self, message: str):
-        self.status = 'failed'
+        self.status = ReviewStatus.FAILED
         self.summary = message
         self.completed_at = datetime.now()
 
