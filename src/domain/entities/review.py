@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import time
 
 APPROVAL_THRESHOLD = 70
 
@@ -23,3 +24,21 @@ class Review:
     def start_processing(self) -> str:
         self.status = "in_progress"
         pass
+
+    def complete(self, rating: int, summary: str, recommendations: list[str]):
+        self.status = "completed"
+        self.rating = rating
+        self.summary = summary
+        self.recommendations = recommendations
+        self.completed_at = datetime.now(timezone.utc)
+
+    def fail(self, reason: str):
+        self.status = "failed"
+        self.summary = reason
+        self.completed_at = datetime.now(timezone.utc)
+
+    def __repr__(self) -> str:
+        return (
+            f"Review(id={self.id}, pr_id={self.pr_id},"
+            f"status={self.status}, rating={self.rating})"
+        )
