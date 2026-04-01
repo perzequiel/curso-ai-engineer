@@ -1,14 +1,19 @@
 from datetime import datetime, timezone
-import time
+
+from src.domain.value_objects.rating import Rating
+from src.domain.value_objects.review_status import ReviewStatus
+
 
 APPROVAL_THRESHOLD = 70
 
 
 class Review:
-    def __init__(self, pr_id: str, review_id: str | None = None):
+    def __init__(
+        self, pr_id: str, review_id: str | None = None, rating: Rating | None = None
+    ):
         self.pr_id = pr_id
-        self.status = "pending"
-        self.rating = None
+        self.status = ReviewStatus.PENDING
+        self.rating = rating
         self.summary = ""
         self.recommendations = []
         self.completed_at = None
@@ -19,21 +24,23 @@ class Review:
         if self.rating is None:
             return False
 
-        return self.rating > APPROVAL_THRESHOLD
+        return self.rating.is_passing()
 
-    def start_processing(self) -> str:
-        self.status = "in_progress"
+    def start_processing(self) -> None:
+        self.status = ReviewStatus.IN_PROGRESS
         pass
 
-    def complete(self, rating: int, summary: str, recommendations: list[str]):
-        self.status = "completed"
+    def complete(
+        self, rating: Rating, summary: str, recommendations: list[str]
+    ) -> None:
+        self.status = ReviewStatus.COMPLETED
         self.rating = rating
         self.summary = summary
         self.recommendations = recommendations
         self.completed_at = datetime.now(timezone.utc)
 
-    def fail(self, reason: str):
-        self.status = "failed"
+    def fail(self, reason: str) -> None:
+        self.status = ReviewStatus.FAILED
         self.summary = reason
         self.completed_at = datetime.now(timezone.utc)
 
