@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
-
-APPROVAL_THRESHOLD = 70
+from src.domain.value_objects.rating import Rating
 
 class Review:
     def __init__(self, pr_id: str, review_id: str | None = None):
@@ -16,12 +15,12 @@ class Review:
     def is_approved(self):
         if self.rating is None:
             return False
-        return self.rating > APPROVAL_THRESHOLD
+        return self.rating.is_approved()
     
     def start_processing(self):
         self.status = 'in_progress'
 
-    def complete(self, rating: int, summary: str, recommendations: list[str]):
+    def complete(self, rating: Rating, summary: str, recommendations: list[str]):
         self.rating = rating
         self.summary = summary
         self.recommendations = recommendations

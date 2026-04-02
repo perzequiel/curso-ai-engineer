@@ -9,7 +9,7 @@ from datetime import datetime
 import pytest
 
 from src.domain.entities.review import Review
-
+from src.domain.value_objects.rating import Rating
 
 class TestReviewCreation:
     """Tests de creacion de la entidad Review."""
@@ -42,22 +42,22 @@ class TestReviewApproval:
 
     def test_is_approved_with_passing_rating(self):
         review = Review(pr_id="123")
-        review.rating = 85
+        review.rating = Rating(85)
         assert review.is_approved() is True
 
     def test_is_not_approved_with_low_rating(self):
         review = Review(pr_id="123")
-        review.rating = 50
+        review.rating = Rating(50)
         assert review.is_approved() is False
 
     def test_is_not_approved_at_threshold(self):
         review = Review(pr_id="123")
-        review.rating = 70
+        review.rating = Rating(70)
         assert review.is_approved() is False
 
     def test_is_approved_above_threshold(self):
         review = Review(pr_id="123")
-        review.rating = 71
+        review.rating = Rating(71)
         assert review.is_approved() is True
 
 
