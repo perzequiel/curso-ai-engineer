@@ -24,3 +24,24 @@ class Review:
 
     def start_processing(self) -> str:
         self.status = 'in_progress'   
+
+
+    def complete(self, rating: int, summary: str, recommendations: []) -> None:
+        self.status = 'completed'
+        self.rating = rating
+        self.summary = summary
+        self.recommendations = recommendations
+        self.completed_at = datetime.now(timezone.utc)
+
+
+    def fail(self, failMsg: str) -> None:
+        self.status = 'failed'
+        self.summary = f"Review failed: {failMsg}"
+        self.completed_at = datetime.now(timezone.utc)
+
+
+    def __repr__(self) -> str:
+        return (
+            f"Review(id={self.id!r}), pr_id={self.pr_id!r}, "
+            f"status(id={self.status}), rating={self.rating}"
+        )
