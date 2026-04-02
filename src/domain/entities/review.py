@@ -15,6 +15,12 @@ class Review:
 
 
     def is_approved(self) -> bool:
+        """Determinamos si es aprobado (rating > 70)"""
+
         if self.rating is None:
             return False
         return self.rating > APPROVAL_THRESHOLD    
+
+
+    def start_processing(self) -> str:
+        self.status = 'in_progress'   
