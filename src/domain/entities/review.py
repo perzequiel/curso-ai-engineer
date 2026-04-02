@@ -34,4 +34,6 @@ class Review:
         self.completed_at = datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
-        return f"Review - PR ID: {self.pr_id!r} - REVIEW_ID: {self.id!r}"
+        outcome: str = ""
+        outcome = f"Review - ID: {self.id!r} - PR ID: {self.pr_id!r}"
+        return outcome
