@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from src.domain.constants import APPROVAL_THRESHOLD
+
 
 class Review:
     def __init__(self, pr_id: str, review_id: int = '123'):
@@ -10,3 +12,9 @@ class Review:
         self.recommendations = []
         self.completed_at = None
         self.created_at = datetime.now(timezone.utc)
+
+
+    def is_approved(self) -> bool:
+        if self.rating is None:
+            return False
+        return self.rating > APPROVAL_THRESHOLD    
