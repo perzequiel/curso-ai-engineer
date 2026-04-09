@@ -26,3 +26,6 @@ pytest
 
 # Ejecutar tests de una clase especifica
 pytest tests/clase_1/       # Solo Clase 1: Review Entity
+
+# Ejecutar langraph
+langgraph dev
