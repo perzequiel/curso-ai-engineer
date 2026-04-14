@@ -7,7 +7,7 @@ de la entidad principal del dominio.
 from datetime import datetime
 
 import pytest
-
+import uuid
 from src.domain.entities.review import Review
 from src.domain.value_objects.reviewStatus import ReviewStatus
 from src.domain.value_objects.rating import Rating
@@ -33,6 +33,17 @@ class TestReviewCreation:
     def test_create_review_has_created_at(self):
         review = Review(pr_id="123")
         assert isinstance(review.created_at, datetime)
+
+    def test_create_review_generates_uuid_when_no_id_provided(self):
+        review = Review(pr_id="123")
+        # Verifica que el id generado es un UUID válido
+        parsed = uuid.UUID(review.id)
+        assert str(parsed) == review.id
+
+    def test_two_reviews_get_different_ids(self):
+        review1 = Review(pr_id="123")
+        review2 = Review(pr_id="123")
+        assert review1.id != review2.id
 
 
 class TestReviewApproval:
