@@ -20,5 +20,6 @@ class ICodeReviewer(ABC):
     def review_code(self, code: CodeContent) -> ReviewResult:
         """ review_code """
     
+    @abstractmethod
     def get_review_rules(self) -> list[str]:
         """ get_review_rules """
