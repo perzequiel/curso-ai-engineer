@@ -13,4 +13,7 @@ class CodeContent(ABC):
   None
 
 class ReviewResult():
-  None
+  def __init__(self, rating: int, summary: str, recommendations: list[str]):
+    self.rating = rating
+    self.summary = summary
+    self.recommendations = recommendations
