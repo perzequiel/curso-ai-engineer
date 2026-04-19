@@ -10,8 +10,8 @@ from src.infrastructure.ai.langgraph_code_reviewer import LangGraphCodeReviewer
 
 load_dotenv()
 
-key_path = "ANTHROPIC_API_KEY"
-# key_path = "GOOGLE_API_KEY"
+# key_path = "ANTHROPIC_API_KEY"
+key_path = "GOOGLE_API_KEY"
 # api_key = os.environ.get("ANTHROPIC_API_KEY")
 api_key = os.environ.get(key_path)
 if not api_key:
