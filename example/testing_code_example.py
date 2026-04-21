@@ -1,12 +1,20 @@
+from pathlib import Path
+import os
+
+from dotenv import load_dotenv
+
 from domain.ports.code_reviewer import CodeContent
 
-from pathlib import Path
-
 from infrastructure.ai.ai_code_reviewer import AICodeReviewer
+from infrastructure.ai.langraph_code_reviewer import LangraphCodeReviewer
 
+load_dotenv()
 
-reviewer = AICodeReviewer()
-
+# reviewer = AICodeReviewer(
+#     api_key=os.getenv("GOOGLE_API_KEY"),
+#     model="gemini-2.5-flash",
+# )
+reviewer = LangraphCodeReviewer(api_key=os.getenv("GOOGLE_API_KEY"))
 simple_file = Path(__file__).parent / "code_example.py"
 
 code = CodeContent(
@@ -16,7 +24,7 @@ code = CodeContent(
     pr_description="New utiliy to filter and transform",
 )
 
-print("MANANDO A REVISAR CODIGO")
+print("MANDANDO A REVISAR CODIGO")
 result = reviewer.review_code(code)
 
 

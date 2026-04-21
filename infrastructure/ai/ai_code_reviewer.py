@@ -1,7 +1,9 @@
 from langchain_core.messages import HumanMessage, SystemMessage
 from src.domain.ports.code_reviewer import CodeContent, ICodeReviewer, ReviewResult
-from langchain_ollama import ChatOllama
-from langchain_anthropic import ChatAnthropic
+
+# from langchain_ollama import ChatOllama
+# from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 DEFAULT_REVIEW_RULES = [
     "El codigo debe seguir principios SOLID",
@@ -17,23 +19,17 @@ DEFAULT_REVIEW_RULES = [
 
 class AICodeReviewer(ICodeReviewer):
 
-    def __init__(self, api_key: str | None = None, model: str = "llama3"):
+    def __init__(self, api_key: str | None = None, model: str = "gemini-2.5-flash"):
         self._api_key = api_key
         self._model = model
         self._rules = DEFAULT_REVIEW_RULES
 
     def review_code(self, code: CodeContent) -> ReviewResult:
 
-        #  llm = ChatAnthropic(model=self._model, api_key=self._api_key)
-
-        llm = ChatOllama(model=self._model, temperature=0)
-
         sysyem_prompt = self._build_system_prompt()
         user_prompt = self._build_review_prompt(code)
 
-        # response = llm.invoke(
-        #     SystemMessage(content=sysyem_prompt), HumanMessage(content=user_prompt)
-        # )
+        llm = ChatGoogleGenerativeAI(model=self._model, api_key=self._api_key)
 
         response = llm.invoke(
             [
