@@ -163,15 +163,25 @@ class LangGraphCodeReviewer(ICodeReviewer):
         }
     
     def _build_graph(self) -> StateGraph:
+        # Primero se instancia el grafo y se le manda el State que es la
+        # estructura de datos que va a manejar el grafo
         graph = StateGraph(ReviewState)
 
+        # El grafo agrega nodos, cada nodo es una funcion que
+        # recibe el State y devuelve un dict con las salidas
+        # "review" es el nombre o tag del nodo, y self._review_node es la
+        # funcion que se va a ejecutar en ese nodo
         graph.add_node("review", self._review_node)
         graph.add_node("validate_rating", self._validate_rating_node)
 
+        # es el estado 1, el punto de entrada del grafo,
+        # El grafo va a ejecutar ese nodo primero
         graph.set_entry_point("review")
+        # Los conectores indican el flujo del nodo
         graph.add_edge("review", "validate_rating")
         graph.add_edge("validate_rating", END)
 
+        # Dibuja el grafo
         return graph.compile()
 
 
