@@ -13,11 +13,11 @@ class IReviewRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_id(self, id: str) -> Review | None:
+    def find_by_id(self, review_id: str) -> Review | None:
         pass
 
     @abstractmethod
-    def find_all(self) -> list[Review] | None:
+    def find_all(self) -> list[Review]:
         pass
 
     @abstractmethod
