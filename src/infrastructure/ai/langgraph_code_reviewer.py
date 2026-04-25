@@ -2,7 +2,8 @@ from src.domain.ports.code_reviewer import ICodeReviewer, CodeContent, ReviewRes
 
 from typing import Annotated, TypedDict
 
-from langchain_anthropic import ChatAnthropic
+# from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
@@ -35,7 +36,8 @@ class ReviewState(TypedDict):
 
 class LangGraphCodeReviewer(ICodeReviewer):
 
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
+    # def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         self._api_key = api_key
         self._model = model
         self._rules = DEFAULT_REVIEW_RULES
@@ -61,7 +63,8 @@ class LangGraphCodeReviewer(ICodeReviewer):
     
     def _call_llm(self, system_prompt, user_prompt) -> str:
         
-        llm = ChatAnthropic(
+        # llm = ChatAnthropic(
+        llm = ChatGoogleGenerativeAI(    
             model=self._model,
             api_key=self._api_key
         )
