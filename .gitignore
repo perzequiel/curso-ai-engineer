@@ -15,3 +15,6 @@ htmlcov/
 .ruff_cache/
 .mypy_cache/
 .DS_Store
+
+# Documentation folder
+__docs__/

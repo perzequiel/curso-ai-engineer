@@ -36,7 +36,7 @@ Verifica que la rama de la clase que vas a entregar existe:
 git branch -r
 ```
 
-Deberias ver algo como `origin/feature/clase-1`, `origin/feature/clase-2`, etc.
+Deberias ver algo como `origin/feature/clase-1_base`, `origin/feature/clase-2_base`, etc.
 
 ---
 
@@ -45,15 +45,15 @@ Deberias ver algo como `origin/feature/clase-1`, `origin/feature/clase-2`, etc.
 Posicionate en la rama de la clase que vas a trabajar. Por ejemplo, para la **clase 1**:
 
 ```bash
-git checkout feature/clase-1
+git checkout feature/clase-1_base
 ```
 
-> Reemplaza el numero `1` por el numero de la clase que corresponda (clase-2, clase-3, etc.).
+> Reemplaza el numero `1` por el numero de la clase que corresponda (clase-2_base, clase-3_base, etc.).
 
 Asegurate de que tu rama local este actualizada con la remota:
 
 ```bash
-git pull origin feature/clase-1
+git pull origin feature/clase-1_base
 ```
 
 ---
