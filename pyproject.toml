@@ -9,8 +9,8 @@ dependencies = [
     "langchain-anthropic>=0.1.0",
     "langgraph>=0.0.10",
     "PyGithub>=2.1.0",
-    "astroid>=3.0.0",
     "python-dotenv>=1.0.0",
+    "fastapi[standard]>=0.110.0",
 ]
 
 [project.optional-dependencies]

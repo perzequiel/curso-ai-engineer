@@ -8,8 +8,8 @@ import pytest
 
 from src.application.use_cases.send_review import SendReviewUseCase
 from src.domain.value_objects.review_status import ReviewStatus
-from src.infrastructure.ai.ai_code_reviewer import MockCodeReviewer
-from src.infrastructure.github.github_adapter import MockGitHubAdapter
+from src.infrastructure.ai.mock_code_reviewer import MockCodeReviewer
+from src.infrastructure.github.mock_github_adapter import MockGitHubAdapter
 from src.infrastructure.persistence.in_memory_repository import InMemoryReviewRepository
 
 

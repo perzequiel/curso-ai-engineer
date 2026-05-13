@@ -6,8 +6,8 @@ from src.domain.entities.review import Review
 from src.domain.value_objects.rating import Rating
 from src.domain.value_objects.review_status import ReviewStatus
 from src.infrastructure.persistence.in_memory_repository import InMemoryReviewRepository
-from src.infrastructure.ai.ai_code_reviewer import MockCodeReviewer
-from src.infrastructure.github.github_adapter import MockGitHubAdapter
+from src.infrastructure.ai.mock_code_reviewer import MockCodeReviewer
+from src.infrastructure.github.mock_github_adapter import MockGitHubAdapter
 
 
 @pytest.fixture
