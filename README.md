@@ -258,6 +258,48 @@ Para que el frontend pueda llamar al backend, asegurate de tener corriendo la AP
 | `npm run lint`  | Corre ESLint sobre el codigo del frontend  |
 
 
+## Ejecutar con Docker
+
+El proyecto incluye `Dockerfile` para backend y frontend, mas un `docker-compose.yml` en el root que levanta ambos servicios con un solo comando.
+
+### Requisitos
+
+- Docker 24+ con plugin `docker compose` v2
+
+### Comandos
+
+```bash
+# (Opcional) Copiar variables de entorno. Si no existe .env, los adaptadores
+# caen automaticamente a mocks (sin GitHub real ni Claude real).
+cp .env.example .env
+# Editar .env con tus tokens si querés usar GitHub / Anthropic reales.
+
+# Build + levantar backend y frontend en background
+docker compose up -d --build
+
+# Ver logs en vivo
+docker compose logs -f
+
+# Detener y limpiar
+docker compose down
+```
+
+Servicios expuestos en el host:
+
+- Backend FastAPI: [http://localhost:8000](http://localhost:8000) (docs en `/docs`)
+- Frontend Next.js: [http://localhost:3000](http://localhost:3000)
+
+### Notas
+
+- El frontend usa `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`) que se **inlinea en build-time** dentro del bundle de Next.js. Si querés apuntar a otro host/puerto, definí la variable antes de buildear:
+
+  ```bash
+  NEXT_PUBLIC_API_URL=http://mi-host:9000 docker compose up -d --build
+  ```
+
+- El backend lee `.env` desde el root via `env_file`. Las variables sensibles (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY`) **nunca** se quedan en la imagen: se inyectan al runtime.
+- Hay un `healthcheck` en el backend que pega contra `/docs`; el frontend espera a que el backend este healthy antes de arrancar (`depends_on.condition: service_healthy`).
+
 ## Ejecutar Tests
 
 ```bash

@@ -1,0 +1,10 @@
+# pnpm 11+: settings que antes vivian en `pnpm` de package.json (deprecado).
+#
+# strictDepBuilds=true es el default en pnpm 11, por lo que cualquier build script
+# de dependencia debe ser explicitamente aprobado aqui o el `pnpm install --frozen-lockfile`
+# falla con ERR_PNPM_IGNORED_BUILDS.
+#
+# sharp: usado por Next.js para optimizacion de imagenes. Su postinstall descarga
+# los binarios libvips prebuilt; sin esto, sharp no funciona en runtime.
+allowBuilds:
+  sharp: true

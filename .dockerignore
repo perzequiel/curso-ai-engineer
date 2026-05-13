@@ -1,0 +1,43 @@
+# Git / VCS
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.egg-info
+.eggs
+build
+dist
+.venv
+venv
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# Entornos / secretos
+.env
+.env.*
+!.env.example
+
+# Frontend (se construye en su propia imagen)
+frontend
+
+# Tests y docs (no se necesitan en runtime)
+tests
+examples
+*.md
+!README.md
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore

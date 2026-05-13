@@ -1,0 +1,54 @@
+name: curso-ai-engineer
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: curso-ai-engineer/backend:latest
+    container_name: curso-ai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # CORS para que el browser pueda llamar desde el frontend dockerizado.
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+    env_file:
+      # Variables opcionales (GITHUB_TOKEN, GITHUB_REPO, ANTHROPIC_API_KEY).
+      # Si falta el archivo .env, los adaptadores caen automaticamente a mocks.
+      - path: .env
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/docs"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks:
+      - curso-ai-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # El bundle de Next se compila inlineando esta URL (la usa el browser
+        # del usuario, NO el container, por eso apunta a localhost del host).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    image: curso-ai-engineer/frontend:latest
+    container_name: curso-ai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NODE_ENV: production
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - curso-ai-net
+
+networks:
+  curso-ai-net:
+    driver: bridge
