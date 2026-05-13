@@ -13,3 +13,11 @@ class Rating:
     def is_passing(self) -> bool:
         """Determina si la calificacion supera el umbral de aprobacion (70)."""
         return self._value >= APPROVAL_THRESHOLD
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Rating):
+            return NotImplemented
+        return self._value == other._value
+
+    def __hash__(self) -> int:
+        return hash(self._value)

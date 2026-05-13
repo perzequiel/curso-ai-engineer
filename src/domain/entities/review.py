@@ -1,18 +1,19 @@
+import uuid
 from datetime import datetime, timezone
 
 from src.domain.value_objects.review_status import ReviewStatus
 from src.domain.value_objects.rating import Rating
 
 class Review:
-    def __init__(self, pr_id: str, review_id: str | None = None, rating: Rating | None = None):
-        self.id = review_id or "some_id"
+    def __init__(self, pr_id: str, review_id: str | None = None, rating: Rating | None = None, created_at: datetime | None = None):
+        self.id = review_id or str(uuid.uuid4())
         self.pr_id = pr_id
         self.status = ReviewStatus.PENDING
         self.rating = rating
         self.summary = ""
         self.recommendations = []
         self.completed_at = None
-        self.created_at = datetime.now(timezone.utc)
+        self.created_at = created_at or datetime.now(timezone.utc)
 
 
     def is_approved(self) -> bool:
