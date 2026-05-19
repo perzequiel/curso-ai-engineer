@@ -22,6 +22,7 @@ class ICodeReviewer(ABC):
     def review_code(self, code: CodeContent) -> ReviewResult: pass
 
     @abstractmethod
-    def get_review_rules(self) -> list[str]: pass
+    def get_review_rules(self) -> list[str]: 
+        return self._rules
 
 
