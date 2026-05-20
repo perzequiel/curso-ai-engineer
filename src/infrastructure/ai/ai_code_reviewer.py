@@ -44,7 +44,7 @@ class AICodeReviewer(ICodeReviewer):
     def _build_system_prompt(self)-> str:
         rules_text = "\n".join(f" - {rule}" for rule in self._rules)
         return (
-            "Eres un revisor de codigo experto, evalua el codibgo basado en estas reglas:\n"
+            "Eres un revisor de codigo experto, evalua el codigo basado en estas reglas:\n"
             f"{rules_text}\n\n"
             "Responde en este formato exacto:\n"
             "RATING: <number 0-100>\n"
@@ -66,9 +66,9 @@ class AICodeReviewer(ICodeReviewer):
             files_text += f"\n---{filepath}---\n{content}\n"
         
         return (
-            f"PR Title: {code.pr_title}"
+            f"PR Title: {code.pr_title}\n"
             f"PR Description: {code.pr_description}\n"
-            f"Folder Structure: {code.pr_description}\n"
+            f"Folder Structure: {', '.join(code.folder_structure)}\n"
             f"\nFiles:\n {files_text}\n"
         )
         
@@ -79,15 +79,15 @@ class AICodeReviewer(ICodeReviewer):
         recommendations = []
         
         for i, line in enumerate(lines):
-            if line.startswith("RATING"):
+            if line.startswith("RATING:"):
                 try:
                     rating= int(line.split(":")[1].strip())
                 except(ValueError,IndexError):
                     rating = 50
             elif line.startswith('SUMMARY:'):
                 summary = line.split(":",1)[1].strip()
-            elif line.startswith('-') and i > 0 and any(
-                lines[j].startswith("RECOMMENDATIONS") for j in range(max(0,i - 5),i)
+            elif line.startswith('- ') and i > 0 and any(
+                lines[j].startswith("RECOMMENDATIONS:") for j in range(max(0,i - 5),i)
             ):
                 
                 recommendations.append(line[2:].strip())
