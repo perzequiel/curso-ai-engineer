@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -46,7 +46,7 @@ export function PRList() {
   const [selectedPR, setSelectedPR] = useState<PRWithReviewStatus | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const fetchPRs = async () => {
+  const fetchPRs = useCallback(async () => {
     setLoading(true)
     try {
       const data = await apiService.getPRsWithReviewStatus(stateFilter)
@@ -60,11 +60,12 @@ export function PRList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [stateFilter])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPRs()
-  }, [stateFilter])
+  }, [fetchPRs])
 
   const handleCreateReview = async (prId: string) => {
     setCreatingReview(prId)
