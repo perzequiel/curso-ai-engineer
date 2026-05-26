@@ -8,8 +8,9 @@ from datetime import datetime
 
 import pytest
 
+from src.domain.value_objects.review_status import ReviewStatus
 from src.domain.entities.review import Review
-
+from src.domain.value_objects.rating import Rating
 
 class TestReviewCreation:
     """Tests de creacion de la entidad Review."""
@@ -17,12 +18,12 @@ class TestReviewCreation:
     def test_create_review_with_defaults(self):
         review = Review(pr_id="123")
         assert review.pr_id == "123"
-        # assert review.status == 'pending'
-        # assert review.rating is None
-        # assert review.summary == ""
-        # assert review.recommendations == []
-        # assert review.completed_at is None
-        # assert review.id is not None
+        assert review.status == ReviewStatus.PENDING
+        assert review.rating is None
+        assert review.summary == ""
+        assert review.recommendations == []
+        assert review.completed_at is None
+        assert review.id is not None
 
     def test_create_review_with_custom_id(self):
         review = Review(pr_id="123", review_id="custom-id")
@@ -31,7 +32,6 @@ class TestReviewCreation:
     def test_create_review_has_created_at(self):
         review = Review(pr_id="123")
         assert isinstance(review.created_at, datetime)
-
 
 class TestReviewApproval:
     """Tests de logica de aprobacion."""
@@ -42,24 +42,23 @@ class TestReviewApproval:
 
     def test_is_approved_with_passing_rating(self):
         review = Review(pr_id="123")
-        review.rating = 85
+        review.rating = Rating(85)
         assert review.is_approved() is True
 
     def test_is_not_approved_with_low_rating(self):
         review = Review(pr_id="123")
-        review.rating = 50
+        review.rating = Rating(50)
         assert review.is_approved() is False
 
     def test_is_not_approved_at_threshold(self):
         review = Review(pr_id="123")
-        review.rating = 70
+        review.rating = Rating(70)
         assert review.is_approved() is False
 
     def test_is_approved_above_threshold(self):
         review = Review(pr_id="123")
-        review.rating = 71
+        review.rating = Rating(71)
         assert review.is_approved() is True
-
 
 class TestReviewStateTransitions:
     """Tests de transiciones de estado."""
@@ -67,7 +66,7 @@ class TestReviewStateTransitions:
     def test_start_processing(self):
         review = Review(pr_id="123")
         review.start_processing()
-        assert review.status == 'in_progress'
+        assert review.status == ReviewStatus.IN_PROGRESS
 
     def test_complete_review(self):
         review = Review(pr_id="123")
@@ -77,7 +76,7 @@ class TestReviewStateTransitions:
             summary="Excellent code",
             recommendations=["Minor: add docstrings"],
         )
-        assert review.status == 'completed'
+        assert review.status == ReviewStatus.COMPLETED
         assert review.rating == rating
         assert review.summary == "Excellent code"
         assert review.recommendations == ["Minor: add docstrings"]
@@ -86,7 +85,7 @@ class TestReviewStateTransitions:
     def test_fail_review(self):
         review = Review(pr_id="123")
         review.fail("API timeout")
-        assert review.status == 'failed'
+        assert review.status == ReviewStatus.FAILED
         assert "API timeout" in review.summary
         assert review.completed_at is not None
 
