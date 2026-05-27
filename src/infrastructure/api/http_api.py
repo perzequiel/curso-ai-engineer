@@ -16,6 +16,7 @@ from src.application.use_cases.list_reviews import ListReviewsUseCase
 from src.application.use_cases.send_review import SendReviewUseCase
 from src.domain.entities.review import Review
 from src.domain.ports.github_client import PRSummary
+from src.domain.ports.review_repository import IReviewRepository
 from src.infrastructure.ai.ai_code_reviewer import AICodeReviewer
 from src.infrastructure.ai.mock_code_reviewer import MockCodeReviewer
 from src.infrastructure.github.github_adapter import GitHubAdapter
@@ -41,8 +42,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_repository = InMemoryReviewRepository()
-# _repository = DBReviewRepository()
+def _build_repository() -> IReviewRepository:
+    """Selecciona el adaptador de persistencia segun REPOSITORY_BACKEND.
+
+    - "db" / "postgres" / "postgresql" (default): Postgres + pgvector.
+      Aplica las migraciones de Alembic al arrancar (crea esquema si falta).
+    - "memory": InMemoryReviewRepository (testing / sin DB).
+
+    El import de la capa DB es lazy: en modo memoria no hace falta tener
+    instaladas sqlalchemy/pgvector.
+    """
+    backend = os.environ.get("REPOSITORY_BACKEND", "db").lower()
+    if backend == "memory":
+        return InMemoryReviewRepository()
+
+    from src.infrastructure.persistence.database import (
+        create_db_engine,
+        create_session_factory,
+        run_migrations,
+    )
+    from src.infrastructure.persistence.db_repository import DBReviewRepository
+
+    run_migrations()
+    engine = create_db_engine()
+    return DBReviewRepository(create_session_factory(engine))
+
+
+_repository = _build_repository()
 
 
 def _build_github_client():

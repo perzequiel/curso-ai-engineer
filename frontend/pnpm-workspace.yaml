@@ -6,8 +6,11 @@
 #
 # sharp: usado por Next.js para optimizacion de imagenes. Su postinstall descarga
 # los binarios libvips prebuilt; sin esto, sharp no funciona en runtime.
+# unrs-resolver: resolver nativo (oxc) que trae eslint-config-next; su postinstall
+# compila/descarga el binario nativo. Sin aprobarlo el install falla con ERR_PNPM_IGNORED_BUILDS.
 packages:
   - .
 
 allowBuilds:
   sharp: true
+  unrs-resolver: true

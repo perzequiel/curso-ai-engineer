@@ -44,8 +44,9 @@ WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
 
-COPY --chown=app:app main.py ./
+COPY --chown=app:app main.py alembic.ini ./
 COPY --chown=app:app src ./src
+COPY --chown=app:app migrations ./migrations
 
 USER app
 

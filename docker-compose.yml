@@ -13,17 +13,49 @@ services:
     environment:
       # CORS para que el browser pueda llamar desde el frontend dockerizado.
       CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+      # Persistencia: "db" usa Postgres+pgvector (default). "memory" sin DB.
+      REPOSITORY_BACKEND: ${REPOSITORY_BACKEND:-db}
+      # Dentro de la red de compose el host de la DB es el servicio "db".
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changethis}
+      POSTGRES_DB: ${POSTGRES_DB:-curso_ai}
     env_file:
       # Variables opcionales (GITHUB_TOKEN, GITHUB_REPO, ANTHROPIC_API_KEY).
       # Si falta el archivo .env, los adaptadores caen automaticamente a mocks.
       - path: .env
         required: false
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/docs"]
       interval: 30s
       timeout: 5s
       start_period: 15s
       retries: 3
+    networks:
+      - curso-ai-net
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: curso-ai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changethis}
+      POSTGRES_DB: ${POSTGRES_DB:-curso_ai}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-curso_ai}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
     networks:
       - curso-ai-net
 
@@ -52,3 +84,6 @@ services:
 networks:
   curso-ai-net:
     driver: bridge
+
+volumes:
+  postgres-data:
