@@ -10,7 +10,6 @@ import pytest
 
 from src.domain.ports.review_repository import IReviewRepository
 
-
 class TestIReviewRepositoryInterface:
     """Tests para verificar la interface del repositorio."""
 
