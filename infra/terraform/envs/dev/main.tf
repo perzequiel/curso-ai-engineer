@@ -20,6 +20,9 @@ module "iam_github_oidc" {
   github_repo     = var.github_repo
   github_branches = var.github_deploy_branches
 
+  # El provider OIDC de GitHub ya existe en la cuenta (otra IaC lo creo).
+  create_oidc_provider = false
+
   ecr_repository_arns = module.ecr.repository_arns
   pass_role_arns = [
     module.ecs_cluster.execution_role_arn,
