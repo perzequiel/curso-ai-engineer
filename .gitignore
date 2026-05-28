@@ -14,3 +14,11 @@ venv/
 htmlcov/
 .ruff_cache/
 .mypy_cache/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+**/terraform.tfvars
+!**/terraform.tfvars.example
