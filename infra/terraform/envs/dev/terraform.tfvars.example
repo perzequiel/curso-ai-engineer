@@ -1,0 +1,4 @@
+region      = "us-east-1"
+env         = "dev"
+image_tag   = "latest"
+github_repo = "owner/repository-name"

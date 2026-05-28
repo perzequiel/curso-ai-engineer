@@ -1,0 +1,4 @@
+- crearse una cuenta a aws
+- obtener los secrets de aws
+- instalar docker, docker-compose, (OrbStack), terraform
+- seguir los pasos de /Users/perzequiel/Documents/projects/curso-ai-engineer/infra/README.md

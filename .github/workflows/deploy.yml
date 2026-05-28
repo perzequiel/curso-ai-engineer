@@ -1,0 +1,287 @@
+name: Deploy dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "frontend/**"
+      - "migrations/**"
+      - "Dockerfile"
+      - "frontend/Dockerfile"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Forzar build y deploy de backend y frontend"
+        required: false
+        default: "false"
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  CLUSTER: cursoai-dev
+  ENV_PREFIX: cursoai-dev
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  detect-changes:
+    name: Detectar cambios
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - id: sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'src/**'
+              - 'migrations/**'
+              - 'main.py'
+              - 'alembic.ini'
+              - 'Dockerfile'
+              - 'pyproject.toml'
+              - 'uv.lock'
+            frontend:
+              - 'frontend/**'
+              - 'frontend/Dockerfile'
+
+  build-and-push:
+    name: Build ${{ matrix.service }}
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: |
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true' ||
+      github.event.inputs.force_all == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            dockerfile: Dockerfile
+            context: .
+            changed_key: backend
+          - service: frontend
+            dockerfile: frontend/Dockerfile
+            context: frontend
+            changed_key: frontend
+    steps:
+      - name: Skip if no changes
+        id: should_run
+        run: |
+          changed="${{ needs.detect-changes.outputs[matrix.changed_key] }}"
+          force="${{ github.event.inputs.force_all }}"
+          if [ "$changed" = "true" ] || [ "$force" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.should_run.outputs.run == 'true'
+
+      - name: Configurar credenciales AWS
+        if: steps.should_run.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolver ECR registry
+        if: steps.should_run.outputs.run == 'true'
+        id: ecr
+        run: |
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          echo "registry=${ACCOUNT}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> "$GITHUB_OUTPUT"
+
+      - name: Login ECR
+        if: steps.should_run.outputs.run == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup Docker Buildx
+        if: steps.should_run.outputs.run == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Obtener ALB DNS para frontend
+        if: steps.should_run.outputs.run == 'true' && matrix.service == 'frontend'
+        id: alb_dns
+        run: |
+          DNS=$(aws elbv2 describe-load-balancers \
+            --names cursoai-dev-alb \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          echo "api_url=http://${DNS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build y push ${{ matrix.service }}
+        if: steps.should_run.outputs.run == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ENV_PREFIX }}-${{ matrix.service }}:${{ needs.detect-changes.outputs.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.ENV_PREFIX }}-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ matrix.service == 'frontend' && steps.alb_dns.outputs.api_url || 'http://localhost:8000' }}
+
+  register-task-definitions:
+    name: Registrar task def ${{ matrix.service }}
+    needs: [detect-changes, build-and-push]
+    if: always() && needs.build-and-push.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            changed_key: backend
+          - service: frontend
+            changed_key: frontend
+    steps:
+      - name: Gate
+        id: gate
+        run: |
+          changed="${{ needs.detect-changes.outputs[matrix.changed_key] }}"
+          force="${{ github.event.inputs.force_all }}"
+          if [ "$changed" = "true" ] || [ "$force" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configurar credenciales AWS
+        if: steps.gate.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolver ECR registry
+        if: steps.gate.outputs.run == 'true'
+        id: ecr
+        run: |
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          echo "registry=${ACCOUNT}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> "$GITHUB_OUTPUT"
+
+      - name: Registrar nueva revision
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          FAMILY=${{ env.ENV_PREFIX }}-${{ matrix.service }}
+          NEW_IMAGE=${{ steps.ecr.outputs.registry }}/$FAMILY:${{ needs.detect-changes.outputs.sha }}
+
+          aws ecs describe-task-definition --task-definition "$FAMILY" \
+            --query 'taskDefinition' > td.json
+
+          jq --arg img "$NEW_IMAGE" '
+            .containerDefinitions[0].image = $img
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                  .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)
+          ' td.json > td-new.json
+
+          REV_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://td-new.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          echo "Nueva task def: $REV_ARN"
+
+  deploy-services:
+    name: Deploy ${{ matrix.service }}
+    needs: [detect-changes, register-task-definitions]
+    if: always() && needs.register-task-definitions.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            changed_key: backend
+          - service: frontend
+            changed_key: frontend
+    steps:
+      - name: Gate
+        id: gate
+        run: |
+          changed="${{ needs.detect-changes.outputs[matrix.changed_key] }}"
+          force="${{ github.event.inputs.force_all }}"
+          if [ "$changed" = "true" ] || [ "$force" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configurar credenciales AWS
+        if: steps.gate.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update service
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster ${{ env.CLUSTER }} \
+            --service ${{ env.ENV_PREFIX }}-${{ matrix.service }} \
+            --task-definition ${{ env.ENV_PREFIX }}-${{ matrix.service }} \
+            --force-new-deployment \
+            --query 'service.serviceName' --output text
+
+      - name: Esperar rollout
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.CLUSTER }} \
+            --services ${{ env.ENV_PREFIX }}-${{ matrix.service }}
+          echo "${{ matrix.service }} rollout completo"
+
+  smoke-tests:
+    name: Smoke tests
+    needs: deploy-services
+    runs-on: ubuntu-latest
+    if: always() && needs.deploy-services.result == 'success'
+    steps:
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolver ALB DNS
+        id: alb
+        run: |
+          DNS=$(aws elbv2 describe-load-balancers \
+            --names cursoai-dev-alb \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          echo "dns=$DNS" >> "$GITHUB_OUTPUT"
+          echo "ALB: http://$DNS"
+
+      - name: API docs
+        run: curl -fsSL --retry 5 --retry-delay 5 "http://${{ steps.alb.outputs.dns }}/docs"
+
+      - name: Frontend
+        run: curl -fsSI "http://${{ steps.alb.outputs.dns }}/" | head -1
