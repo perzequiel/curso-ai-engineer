@@ -12,6 +12,21 @@ module "ecr" {
   name   = local.name
 }
 
+# Rol IAM asumido por GitHub Actions via OIDC para deploys (push ECR + update ECS).
+# El ARN se setea como secret AWS_DEPLOY_ROLE_ARN en el repo.
+module "iam_github_oidc" {
+  source          = "../../modules/iam-github-oidc"
+  name            = local.name
+  github_repo     = var.github_repo
+  github_branches = var.github_deploy_branches
+
+  ecr_repository_arns = module.ecr.repository_arns
+  pass_role_arns = [
+    module.ecs_cluster.execution_role_arn,
+    module.ecs_cluster.task_role_arn,
+  ]
+}
+
 module "alb" {
   source            = "../../modules/alb"
   name              = local.name

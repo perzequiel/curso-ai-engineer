@@ -3,6 +3,11 @@ output "alb_url" {
   value       = "http://${module.alb.dns_name}"
 }
 
+output "github_deploy_role_arn" {
+  description = "ARN del rol IAM para GitHub Actions. Setearlo como secret AWS_DEPLOY_ROLE_ARN."
+  value       = module.iam_github_oidc.role_arn
+}
+
 output "alb_dns_name" {
   value = module.alb.dns_name
 }

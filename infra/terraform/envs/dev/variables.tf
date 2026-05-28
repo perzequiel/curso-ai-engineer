@@ -19,3 +19,9 @@ variable "github_repo" {
   description = "GitHub repository in owner/repo format"
   default     = ""
 }
+
+variable "github_deploy_branches" {
+  type        = list(string)
+  description = "Branches autorizadas a asumir el rol de deploy via OIDC."
+  default     = ["main-api"]
+}
