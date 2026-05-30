@@ -1,12 +1,9 @@
-import code
-
-from langchain_protocol import TypedDict
-
 from src.domain.ports.code_reviewer import ICodeReviewer, CodeContent, ReviewResult
-from src.infrastructure.ai.old_langgraph_code_reviewer import ReviewState
+
+from typing import Annotated, TypedDict
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
 DEFAULT_REVIEW_RULES = [
@@ -20,7 +17,7 @@ DEFAULT_REVIEW_RULES = [
     "Documentation must be clear and concise",
 ]
 
-RATING_THRESHOLD = 70
+RATING_THRESHOLD = 99
 
 class ReviewState(TypedDict):
     # inputs
@@ -36,10 +33,9 @@ class ReviewState(TypedDict):
     approved: bool
     study_plan: str
 
-"""Adapter of the port LangGraphCodeReviewer, this class is the one that is going to be used in the application layer, it will receive the code and send it to the LLM, then it will parse the response and return a ReviewResult."""
 class LangGraphCodeReviewer(ICodeReviewer):
 
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929", rules: str = ""):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
         self._api_key = api_key
         self._model = model
         self._rules = DEFAULT_REVIEW_RULES
@@ -52,11 +48,13 @@ class LangGraphCodeReviewer(ICodeReviewer):
             "pr_title": code.pr_title,
             "pr_description": code.pr_description,
         })
+
         return ReviewResult(
             rating=result["rating"],
-            summary=result["summary"],
-            recommendations=result["recommendations"]
+            summary=result["study_plan"],
+            recommendations=result["recommendations"],
         )
+
 
     def get_review_rules(self) -> list[str]:
         return self._rules.copy()
@@ -71,21 +69,22 @@ class LangGraphCodeReviewer(ICodeReviewer):
         response = llm.invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt)
-        ])    
+        ])
 
         return response.content
-    
-    # review_node
-    def _review_node(self, state: ReviewState) -> dict:
-        """Checks the code and provides a rating, summary, and recommendations."""
 
-        rules_text = "\n".join(f"- {rule}" for rule in self._rules)
+    # nodes
+    # _review_node
+    def _review_node(self, state: ReviewState) -> dict:
+        """Revisa el codigo y genera rating + summary + recommendations."""
+
+        rules_text = "\n".join(f" - {r}" for r in self._rules)
         system = (
-            "You are an expert code reviewer. Evaluate the code based on these rules:\n"
+            "Sos un revisor de codigo experto. Evalua el codigo basado en estas reglas:\n"
             f"{rules_text}\n\n"
-            "Respond in this exact format:\n"
+            "Responde en este formato exacto:\n"
             "RATING: <number 0-100>\n"
-            "SUMMARY: <one paragraph summary>\n"
+            "SUMMARY: <un parrafo>\n"
             "RECOMMENDATIONS:\n"
             "- <recommendation 1>\n"
             "- <recommendation 2>\n"
@@ -95,7 +94,7 @@ class LangGraphCodeReviewer(ICodeReviewer):
         files_text = ""
         for fp, content in state["files"].items():
             files_text += f"\n--- {fp} ---\n{content}\n"
-        
+
         user = (
             f"PR Title: {state['pr_title']}\n"
             f"PR Description: {state['pr_description']}\n"
@@ -106,9 +105,9 @@ class LangGraphCodeReviewer(ICodeReviewer):
         content = self._call_llm(system, user)
         return self._parse_review(content)
     
-    # validate_rating_node
+    # _validate_rating_node
     def _validate_rating_node(self, state: ReviewState) -> dict:
-        """If the rating is below the threshold, it generates a study plan with the concepts to improve."""
+        """Si el rating es bajo, genera un plan de estudio con conceptos a mejorar."""
         rating = state["rating"]
         summary = state['summary']
         recommendations = state["recommendations"]
@@ -117,12 +116,12 @@ class LangGraphCodeReviewer(ICodeReviewer):
             return {"approved": True, "study_plan": ""}
 
         system = (
-            "You are a programming mentor. Given a code review with a low rating, "
-            "generate a concise study plan with the concepts the developer "
-            "needs to study to improve their code.\n\n"
-            "Format:\n"
-            "STUDY PLAN:\n"
-            "1. <Concept> — <why it's important and suggested resource>\n"
+            "Sos un mentor de programacion. Dado un code review con rating bajo, "
+            "genera un plan de estudio conciso con los conceptos que el desarrollador "
+            "necesita estudiar para mejorar su codigo.\n\n"
+            "Formato:\n"
+            "PLAN DE ESTUDIO:\n"
+            "1. <Concepto> — <por que es importante y recurso sugerido>\n"
             "2. ...\n"
         )
 
@@ -134,9 +133,10 @@ class LangGraphCodeReviewer(ICodeReviewer):
         )
 
         content = self._call_llm(system, user)
+
         return {"approved": False, "study_plan": content}
-    
-    # Parse review 
+
+    # parse review
     def _parse_review(self, content: str) -> dict:
         lines = content.strip().split("\n")
         rating = 50
@@ -161,11 +161,11 @@ class LangGraphCodeReviewer(ICodeReviewer):
             "summary": summary,
             "recommendations": recommendations,
         }
-
+    
+    """Graph building"""
     def _build_graph(self) -> StateGraph:
-        """Instantiate the graph, add the nodes and edges, and compile it. It reviews and validates the code, if the rating is below the threshold, it generates a study plan."""
         graph = StateGraph(ReviewState)
-        """ review_node: given the code, it provides a rating, a summary and recommendations. validate_rating_node: given the rating, summary and recommendations, if the rating is below the threshold, it generates a study plan with the concepts to improve."""
+
         graph.add_node("review", self._review_node)
         graph.add_node("validate_rating", self._validate_rating_node)
 
@@ -174,3 +174,5 @@ class LangGraphCodeReviewer(ICodeReviewer):
         graph.add_edge("validate_rating", END)
 
         return graph.compile()
+
+
