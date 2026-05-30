@@ -1,7 +1,7 @@
 """Entry point for LangGraph Studio. Does not affect production code."""
 import os
 from dotenv import load_dotenv
-from src.infrastructure.ai.langgraph_code_reviewer import LangGraphCodeReviewer
+from infrastructure.ai.old_langgraph_code_reviewer import LangGraphCodeReviewer
 
 load_dotenv()
 
